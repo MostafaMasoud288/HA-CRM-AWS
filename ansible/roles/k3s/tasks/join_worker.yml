@@ -1,0 +1,7 @@
+---
+- name: Join k3s agent to cluster
+  ansible.builtin.shell: |
+    curl -sfL https://get.k3s.io | K3S_TOKEN={{ k3s_token_value }} sh -s - agent \
+      --server https://{{ groups['masters'][0] }}:6443
+  args:
+    creates: /usr/local/bin/k3s

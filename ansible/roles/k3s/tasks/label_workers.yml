@@ -1,0 +1,35 @@
+# tasks/label_workers.yml
+---
+- name: Wait for all workers to be Ready
+  ansible.builtin.command: >
+    k3s kubectl get node k3s-worker-{{ groups['workers'].index(item) + 1 }}
+    --no-headers -o custom-columns=STATUS:.status.conditions[-1].type
+  register: node_status
+  until: node_status.stdout == "Ready"
+  retries: 10
+  delay: 15
+  loop: "{{ groups['workers'] }}"
+  delegate_to: "{{ groups['masters'][0] }}"
+  changed_when: false
+
+- name: Label all worker nodes
+  ansible.builtin.command: >
+    k3s kubectl label node k3s-worker-{{ groups['workers'].index(item) + 1 }}
+    node=worker --overwrite
+  loop: "{{ groups['workers'] }}"
+  loop_control:
+    label: "Labeling k3s-worker-{{ groups['workers'].index(item) + 1 }}"
+  delegate_to: "{{ groups['masters'][0] }}"
+  changed_when: true
+
+- name: Verify worker labels
+  ansible.builtin.command: k3s kubectl get nodes --show-labels
+  register: nodes_labels
+  changed_when: false
+  delegate_to: "{{ groups['masters'][0] }}"
+  run_once: true
+
+- name: Show nodes labels
+  ansible.builtin.debug:
+    msg: "{{ nodes_labels.stdout }}"
+  run_once: true

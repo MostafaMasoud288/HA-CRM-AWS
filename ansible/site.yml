@@ -1,0 +1,53 @@
+---
+- name: Set hostnames for all nodes
+  hosts: masters, workers
+  become: true
+  tasks:
+    - ansible.builtin.import_role:
+        name: k3s
+        tasks_from: hostname.yml
+
+
+
+- name: Init first master
+  hosts: masters[0]
+  become: true
+  tasks:
+    - ansible.builtin.import_role:
+        name: k3s
+        tasks_from: init_master.yml
+
+
+
+- name: Join additional masters
+  hosts: masters[1:]
+  become: true
+  tasks:
+    - ansible.builtin.import_role:
+        name: k3s
+        tasks_from: join_master.yml
+
+
+- name: Join workers
+  hosts: workers
+  become: true
+  tasks:
+    - ansible.builtin.import_role:
+        name: k3s
+        tasks_from: join_worker.yml
+- name: Label workers
+  hosts: masters[0]        # run from first master only
+  become: true
+  tasks:
+    - ansible.builtin.import_role:
+        name: k3s
+        tasks_from: label_workers.yml
+
+
+- name: Copy project to first master        # ← add this
+  hosts: masters[0]
+  become: true
+  tasks:
+    - ansible.builtin.import_role:
+        name: k3s
+        tasks_from: copy_project.yml

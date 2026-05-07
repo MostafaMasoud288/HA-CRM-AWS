@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nexus-crm
+  namespace: default
+  labels:
+    app: nexus-crm
+spec:
+  selector:
+    matchLabels:
+      app: nexus-crm
+
+  # ── Rolling update (one node at a time) ──────────────────────────────────
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1          # replaces maxSurge (not valid on DaemonSet)
+      maxSurge: 0                # must be 0 for DaemonSet
+
+  template:
+    metadata:
+      labels:
+        app: nexus-crm
+    spec:
+      # ── Graceful shutdown ─────────────────────────────────────────────────
+      terminationGracePeriodSeconds: 30
+
+      containers:
+        - name: crm-app
+          image: mohamedelsayed215/nexus-crm:v1   # ← replace with your image
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+              name: http
+
+          # ── Env: ConfigMap (hosts, ports, db name) ────────────────────────
+          envFrom:
+            - configMapRef:
+                name: crm-config
+            - secretRef:
+                name: crm-db-secret
+
+          # ── Resource limits ───────────────────────────────────────────────
+          resources:
+            requests:
+              cpu:    "100m"
+              memory: "128Mi"
+            limits:
+              cpu:    "500m"
+              memory: "512Mi"
+
+          # ── Liveness probe ────────────────────────────────────────────────
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3001
+            initialDelaySeconds: 15
+            periodSeconds:       20
+            failureThreshold:    3
+
+          # ── Readiness probe (pings both Aurora writer & reader) ───────────
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds:       10
+            failureThreshold:    3
+
+          # ── Security context ──────────────────────────────────────────────
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot:             true
+            runAsUser:                1000
+            readOnlyRootFilesystem:   false
+
+      # ── Node selector (only schedule on worker nodes) ────────────────────
+      nodeSelector:
+        node: worker
+
+      # ── Node tolerations (run on all schedulable nodes) ──────────────────
+      tolerations:
+        - key:      node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect:   NoSchedule
+        - key:      node.kubernetes.io/not-ready
+          operator: Exists
+          effect:   NoExecute
+          tolerationSeconds: 300
+        - key:      node.kubernetes.io/unreachable
+          operator: Exists
+          effect:   NoExecute
+          tolerationSeconds: 300
+
+      # ── Spread across AZs (best-effort) ──────────────────────────────────
+      topologySpreadConstraints:
+        - maxSkew:           1
+          topologyKey:       topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: nexus-crm

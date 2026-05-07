@@ -1,0 +1,11 @@
+---
+- name: Set hostname for masters
+  ansible.builtin.hostname:
+    name: "k3s-master-{{ groups['masters'].index(inventory_hostname) + 1 }}"
+  when: inventory_hostname in groups['masters']
+
+- name: Set hostname for workers
+  ansible.builtin.hostname:
+    name: "k3s-worker-{{ groups['workers'].index(inventory_hostname) + 1 }}"
+  when: inventory_hostname in groups['workers']
+

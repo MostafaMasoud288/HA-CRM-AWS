@@ -1,0 +1,1 @@
+mysql -h main-aurora-cluster.cluster-cehh4jojvvsh.us-east-1.rds.amazonaws.com -u admin -p myappdb < schema.sql

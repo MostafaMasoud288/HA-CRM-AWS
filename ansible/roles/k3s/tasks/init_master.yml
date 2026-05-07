@@ -1,0 +1,29 @@
+---
+- name: Install k3s server with cluster init
+  ansible.builtin.shell: |
+    curl -sfL https://get.k3s.io | sh -s - server \
+      --cluster-init
+  args:
+    creates: /usr/local/bin/k3s
+
+- name: Wait for node-token to be generated
+  ansible.builtin.wait_for:
+    path: /var/lib/rancher/k3s/server/node-token
+    state: present
+    timeout: 60
+
+- name: Get k3s node token
+  ansible.builtin.command: cat /var/lib/rancher/k3s/server/node-token
+  register: k3s_token
+  changed_when: false
+
+- name: Show k3s token
+  ansible.builtin.debug:
+    msg: "Token is {{ k3s_token.stdout }}"
+
+- name: Save token as fact for other hosts
+  ansible.builtin.set_fact:
+    k3s_token_value: "{{ k3s_token.stdout | trim }}"
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  loop: "{{ groups['all'] }}"

@@ -1,0 +1,7 @@
+- name: Copy project to k3s master
+  ansible.builtin.copy:
+    src: /home/mohamed/ha-k3s/app-demo/
+    dest: /home/ubuntu/app-demo/       # ← change to ubuntu home
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'  

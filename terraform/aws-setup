@@ -1,0 +1,79 @@
+#!/bin/bash
+ 
+# ============================================
+# AWS Sandbox Credentials Setup Script
+# ============================================
+ 
+set -e
+ 
+echo ""
+echo "========================================"
+echo "   AWS Sandbox Credentials Setup"
+echo "========================================"
+echo ""
+ 
+# Step 1 - Clear any broken env vars
+echo "🧹 Clearing existing environment variables..."
+unset AWS_ACCESS_KEY_ID
+unset AWS_SECRET_ACCESS_KEY
+unset AWS_SESSION_TOKEN
+echo "   Done."
+echo ""
+ 
+# Step 2 - Ask user to paste credentials
+echo "📋 Paste your 3 credentials from the Learner Lab."
+echo "   (AWS Details → Show → copy the 3 lines)"
+echo ""
+ 
+read -p "aws_access_key_id= " RAW_KEY
+read -p "aws_secret_access_key= " RAW_SECRET
+read -p "aws_session_token= " RAW_TOKEN
+ 
+# Step 3 - Strip all whitespace / newlines / carriage returns
+KEY=$(echo "$RAW_KEY" | tr -d '[:space:]')
+SECRET=$(echo "$RAW_SECRET" | tr -d '[:space:]')
+TOKEN=$(echo "$RAW_TOKEN" | tr -d '[:space:]')
+ 
+echo ""
+echo "🔍 Validating input..."
+ 
+# Basic sanity checks
+if [[ ! "$KEY" == ASIA* ]]; then
+  echo "❌ Access Key doesn't look right (should start with ASIA...)"
+  exit 1
+fi
+ 
+if [[ ${#TOKEN} -lt 100 ]]; then
+  echo "❌ Session token looks too short — did you paste the full value?"
+  exit 1
+fi
+ 
+echo "   ✅ Access Key : ${KEY:0:8}..."
+echo "   ✅ Secret Key : ${SECRET:0:4}****"
+echo "   ✅ Token      : ${TOKEN:0:20}... (length: ${#TOKEN})"
+echo ""
+ 
+# Step 4 - Write clean credentials file
+echo "💾 Writing clean credentials to ~/.aws/credentials ..."
+mkdir -p ~/.aws
+cat > ~/.aws/credentials <<EOF
+[default]
+aws_access_key_id=${KEY}
+aws_secret_access_key=${SECRET}
+aws_session_token=${TOKEN}
+EOF
+echo "   Done."
+echo ""
+ 
+# Step 5 - Verify
+echo "🔎 Verifying with AWS STS..."
+echo ""
+aws sts get-caller-identity
+ 
+echo ""
+echo "========================================"
+echo "✅ Credentials set successfully!"
+echo "   You can now run: terraform apply"
+echo "========================================"
+echo ""
+ 

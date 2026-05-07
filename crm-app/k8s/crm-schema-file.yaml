@@ -1,0 +1,41 @@
+apiVersion: v1
+data:
+  schema.sql: |
+    -- =============================================
+    -- CRM Application Schema — Aurora MySQL
+    -- =============================================
+
+    CREATE DATABASE IF NOT EXISTS crm_db
+      CHARACTER SET utf8mb4
+      COLLATE utf8mb4_unicode_ci;
+
+    USE crm_db;
+
+    CREATE TABLE IF NOT EXISTS contacts (
+      id            INT AUTO_INCREMENT PRIMARY KEY,
+      first_name    VARCHAR(100)  NOT NULL,
+      last_name     VARCHAR(100)  NOT NULL,
+      email         VARCHAR(255)  NOT NULL UNIQUE,
+      phone         VARCHAR(50),
+      company       VARCHAR(255),
+      job_title     VARCHAR(255),
+      status        ENUM('lead','prospect','customer','churned') NOT NULL DEFAULT 'lead',
+      notes         TEXT,
+      avatar_color  VARCHAR(7)    DEFAULT '#F59E0B',
+      created_at    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+      updated_at    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_email   (email),
+      INDEX idx_status  (status),
+      INDEX idx_company (company)
+    ) ENGINE=InnoDB;
+
+    -- Sample seed data
+    INSERT INTO contacts (first_name, last_name, email, phone, company, job_title, status, avatar_color) VALUES
+      ('Ahmed',   'Hassan',   'ahmed.hassan@techcorp.io',   '+20 100 000 0001', 'TechCorp',     'CTO',               'customer',  '#F59E0B'),
+      ('Sara',    'Khalil',   'sara.khalil@startup.co',     '+20 100 000 0002', 'StartupCo',    'Product Manager',   'prospect',  '#10B981'),
+      ('Omar',    'Farouk',   'omar.farouk@devhouse.net',   '+20 100 000 0003', 'DevHouse',     'Lead Engineer',     'lead',      '#3B82F6'),
+      ('Layla',   'Mostafa',  'layla.mostafa@nexus.com',    '+20 100 000 0004', 'Nexus',        'CEO',               'customer',  '#8B5CF6'),
+      ('Karim',   'Adel',     'karim.adel@pivotlabs.io',    '+20 100 000 0005', 'PivotLabs',    'Sales Director',    'prospect',  '#EF4444');
+kind: ConfigMap
+metadata:
+  name: crm-schema-file

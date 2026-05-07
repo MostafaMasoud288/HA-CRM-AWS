@@ -1,0 +1,17 @@
+---
+---
+- name: Set hostnames
+  ansible.builtin.import_tasks: hostname.yml
+    
+- name: Label workers
+  ansible.builtin.import_tasks: label_workers.yml
+
+- name: Init first master
+  ansible.builtin.import_tasks: init_master.yml
+
+- name: Join additional masters
+  ansible.builtin.import_tasks: join_master.yml
+
+- name: Join workers
+  ansible.builtin.import_tasks: join_worker.yml
+

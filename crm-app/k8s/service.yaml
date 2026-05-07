@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nexus-crm-svc
+  namespace: default
+  labels:
+    app: nexus-crm
+  annotations:
+    # Preserve client source IP through the NLB
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
+spec:
+  selector:
+    app: nexus-crm
+  type: NodePort
+  # externalTrafficPolicy: Local preserves the real client IP from NLB
+  # and avoids an extra hop — required when NLB targets are instance-mode
+  externalTrafficPolicy: Local
+  ports:
+    - name:       http
+      protocol:   TCP
+      port:       80           # ClusterIP port (internal)
+      targetPort: 3001         # container port
+      nodePort:   30003        # NLB listener → TCP/30003 → this port
