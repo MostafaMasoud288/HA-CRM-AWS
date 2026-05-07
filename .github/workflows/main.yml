@@ -60,16 +60,16 @@ jobs:
           echo "Detecting failure, starting auto-destroy to clean up resources..."
           terraform destroy -auto-approve -var-file=terraform.tfvars
 
-      - name: Generate Ansible inventory
-        run: |
-          terraform output -json instance_ips | jq -r '"[servers]", .[]' > ../ansible/inventory.ini
+     # - name: Generate Ansible inventory
+     #   run: |
+     #     terraform output -json instance_ips | jq -r '"[servers]", .[]' > ../ansible/inventory.ini
 
       - name: Upload inventory artifact
         uses: actions/upload-artifact@v4
         with:
           name: ansible-inventory
           # المسار الآن أصبح بسيطاً ومباشراً
-          path: ansible/inventory.ini
+          path: terraform/inventory.ini
 
   # ─────────────────────────────────────────
   # STAGE 2: Configure & Run with Ansible
