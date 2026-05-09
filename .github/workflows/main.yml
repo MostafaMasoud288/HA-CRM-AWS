@@ -50,6 +50,11 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -var-file=terraform.tfvars -out=tfplan
 
+      - name: Terraform Import
+        run: terraform import \
+             module.rds.aws_db_subnet_group.database_subnets \
+             main-db-subnet-group
+
       - name: Terraform Apply
         id: apply_step
         run: terraform apply -auto-approve tfplan
